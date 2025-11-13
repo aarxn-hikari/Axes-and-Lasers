@@ -545,6 +545,7 @@ const UIManager = {
 init() {
     this.initCanvas();
     this.injectHubPanel(); // ¡NUEVO! Inyecta el panel del Hub dinámicamente
+    this.initFocusNavigation(); // ✅ Initialize keyboard/gamepad navigation
     this.bindEvents();
     this.bootLog();
   },
@@ -722,6 +723,15 @@ go(from, to) {
     // Update active screen
     this.activeScreen = to;
     console.log(`✅ Active screen set to: ${this.activeScreen}`);
+
+    // ✅ Auto-focus first element on menu screens
+    if (['boot-sequence', 'title-screen', 'main-menu', 'pause', 'levelup'].includes(to)) {
+      setTimeout(() => {
+        if (this.autoFocusFirst) {
+          this.autoFocusFirst();
+        }
+      }, 100);
+    }
   };
   // If the from overlay exists, wait for it to finish hiding
   if (fromOverlay) {
@@ -739,6 +749,101 @@ go(from, to) {
     handleHideComplete();
   }
 },
+
+  // Focus navigation for keyboard/gamepad
+  initFocusNavigation() {
+    // Get all focusable elements in current screen
+    const getFocusableElements = () => {
+      const activeOverlay = document.querySelector('.screen-overlay.active');
+      if (!activeOverlay) return [];
+      return Array.from(activeOverlay.querySelectorAll('.focusable:not([disabled])'));
+    };
+
+    // Auto-focus first element when screen changes
+    const autoFocusFirst = () => {
+      const elements = getFocusableElements();
+      if (elements.length > 0) {
+        elements[0].focus();
+      }
+    };
+
+    // Navigate focus with arrow keys
+    const navigateFocus = (direction) => {
+      const elements = getFocusableElements();
+      if (elements.length === 0) return;
+
+      const currentIndex = elements.findIndex(el => el === document.activeElement);
+      let nextIndex;
+
+      if (direction === 'next' || direction === 'down') {
+        nextIndex = currentIndex < elements.length - 1 ? currentIndex + 1 : 0;
+      } else if (direction === 'prev' || direction === 'up') {
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : elements.length - 1;
+      }
+
+      if (nextIndex !== undefined && elements[nextIndex]) {
+        elements[nextIndex].focus();
+      }
+    };
+
+    // Store for later use
+    this.autoFocusFirst = autoFocusFirst;
+    this.navigateFocus = navigateFocus;
+
+    // Add keyboard listener for navigation
+    document.addEventListener('keydown', (e) => {
+      const screen = this.activeScreen;
+
+      // Only handle navigation keys in menu screens
+      if (['boot-sequence', 'title-screen', 'main-menu', 'pause', 'levelup'].includes(screen)) {
+        if (e.key === 'ArrowDown' || e.key === 'Tab' && !e.shiftKey) {
+          e.preventDefault();
+          navigateFocus('next');
+        } else if (e.key === 'ArrowUp' || e.key === 'Tab' && e.shiftKey) {
+          e.preventDefault();
+          navigateFocus('prev');
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          // Activate focused element
+          if (document.activeElement && document.activeElement.classList.contains('focusable')) {
+            e.preventDefault();
+            document.activeElement.click();
+          }
+        }
+      }
+    });
+
+    // Gamepad navigation (poll in animation frame)
+    let lastDpadState = { up: false, down: false };
+    const checkGamepadNavigation = () => {
+      const gp = GamepadManager.getState();
+      if (!gp) return;
+
+      const screen = this.activeScreen;
+      if (!['boot-sequence', 'title-screen', 'main-menu', 'pause', 'levelup'].includes(screen)) return;
+
+      // D-pad navigation (with debounce)
+      if (gp.dpadDown && !lastDpadState.down) {
+        navigateFocus('down');
+      }
+      if (gp.dpadUp && !lastDpadState.up) {
+        navigateFocus('up');
+      }
+
+      // Button A to activate
+      if (gp.a && document.activeElement && document.activeElement.classList.contains('focusable')) {
+        document.activeElement.click();
+      }
+
+      lastDpadState = { up: gp.dpadUp, down: gp.dpadDown };
+    };
+
+    // Poll gamepad every frame
+    const gamepadPoll = () => {
+      checkGamepadNavigation();
+      requestAnimationFrame(gamepadPoll);
+    };
+    gamepadPoll();
+  },
 
   bindEvents() {
     // Boot → Title
@@ -952,6 +1057,13 @@ this.el('random-seed-btn').addEventListener('click', async () => {
   },
 
   bootLog() {
+    // PS1/PS2-style boot animation with anime.js timeline
+    const sigil = this.el('bootSigil');
+    const bootText = document.querySelector('.boot-text');
+    const bootSub = document.querySelector('.boot-sub');
+    const biosBox = this.el('bios-text');
+    const continueBtn = this.el('boot-continue');
+
     const lines = [
       'HIKARI CREATIVE BIOS v3.1.0',
       '> Cargando AXES & LASERS: Resaca Cósmica...',
@@ -961,21 +1073,70 @@ this.el('random-seed-btn').addEventListener('click', async () => {
       '> Esperando entrada del usuario...'
     ];
 
-    const box = this.el('bios-text');
-    box.innerHTML = '';
+    biosBox.innerHTML = '';
 
+    // Create timeline for boot sequence
+    const tl = anime.timeline({
+      easing: 'easeOutExpo'
+    });
+
+    // 1. Animate sigil (scale + rotate + glow)
+    tl.add({
+      targets: sigil,
+      scale: [0.8, 1],
+      rotate: [0, 360],
+      opacity: [0, 1],
+      duration: 1200,
+      easing: 'easeOutElastic(1, .8)'
+    })
+    // 2. Studio name
+    .add({
+      targets: bootText,
+      opacity: [0, 1],
+      translateY: [-10, 0],
+      duration: 800
+    }, '-=400')
+    // 3. Subtitle
+    .add({
+      targets: bootSub,
+      opacity: [0, 1],
+      translateY: [-10, 0],
+      duration: 600
+    }, '-=400');
+
+    // 4. BIOS text lines with stagger
     lines.forEach((text, i) => {
       const div = document.createElement('div');
       div.className = 'bios-line';
       div.textContent = text;
-      div.style.opacity = 0;
-      div.style.transition = 'opacity 0.7s ease';
-      box.appendChild(div);
-      
-      setTimeout(() => {
-        div.style.opacity = 1;
-      }, i * 420);
+      biosBox.appendChild(div);
+
+      tl.add({
+        targets: div,
+        opacity: [0, 1],
+        translateX: [-20, 0],
+        duration: 500,
+        delay: i * 200
+      }, i === 0 ? '+=400' : '-=300');
     });
+
+    // 5. Show continue button with pulse
+    tl.add({
+      targets: continueBtn,
+      opacity: [0, 1],
+      scale: [0.9, 1],
+      duration: 800,
+      complete: () => {
+        // Pulse animation for continue button
+        anime({
+          targets: continueBtn,
+          scale: [1, 1.05, 1],
+          duration: 1500,
+          loop: true,
+          easing: 'easeInOutQuad'
+        });
+      }
+    }, '+=200');
   },
 
   animateTitle() {
