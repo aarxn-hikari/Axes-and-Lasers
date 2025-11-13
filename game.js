@@ -813,7 +813,11 @@ go(from, to) {
     });
 
     // Gamepad navigation (poll in animation frame)
-    let lastDpadState = { up: false, down: false };
+    let lastDpadState = { up: false, down: false, left: false, right: false };
+    let lastButtonState = { a: false, b: false };
+    let lastMoveTime = 0;
+    const moveDelay = 180; // ms debounce for navigation
+
     const checkGamepadNavigation = () => {
       const gp = GamepadManager.getState();
       if (!gp) return;
@@ -821,20 +825,62 @@ go(from, to) {
       const screen = this.activeScreen;
       if (!['boot-sequence', 'title-screen', 'main-menu', 'pause', 'levelup'].includes(screen)) return;
 
+      const now = performance.now();
+
       // D-pad navigation (with debounce)
-      if (gp.dpadDown && !lastDpadState.down) {
+      if (gp.dpadDown && !lastDpadState.down && (now - lastMoveTime) > moveDelay) {
         navigateFocus('down');
+        lastMoveTime = now;
       }
-      if (gp.dpadUp && !lastDpadState.up) {
+      if (gp.dpadUp && !lastDpadState.up && (now - lastMoveTime) > moveDelay) {
         navigateFocus('up');
+        lastMoveTime = now;
       }
 
-      // Button A to activate
-      if (gp.a && document.activeElement && document.activeElement.classList.contains('focusable')) {
-        document.activeElement.click();
+      // Left stick navigation (with deadzone and debounce)
+      const y = gp.leftStickY || 0;
+      const deadzone = 0.25;
+      if (Math.abs(y) > deadzone && (now - lastMoveTime) > moveDelay) {
+        if (y > deadzone) {
+          navigateFocus('down');
+          lastMoveTime = now;
+        } else if (y < -deadzone) {
+          navigateFocus('up');
+          lastMoveTime = now;
+        }
       }
 
-      lastDpadState = { up: gp.dpadUp, down: gp.dpadDown };
+      // Button A to activate (with debounce)
+      if (gp.a && !lastButtonState.a) {
+        const activeEl = document.activeElement;
+        if (activeEl && activeEl.classList.contains('focusable')) {
+          activeEl.click();
+        }
+      }
+
+      // Button B to go back (with debounce)
+      if (gp.b && !lastButtonState.b) {
+        if (screen === 'pause') {
+          // Resume game
+          const resumeBtn = document.getElementById('resume-btn');
+          if (resumeBtn) resumeBtn.click();
+        } else if (screen !== 'boot-sequence' && screen !== 'title-screen') {
+          // Go back
+          const backBtn = document.querySelector('[data-action="back"]');
+          if (backBtn) backBtn.click();
+        }
+      }
+
+      lastDpadState = {
+        up: gp.dpadUp,
+        down: gp.dpadDown,
+        left: gp.dpadLeft,
+        right: gp.dpadRight
+      };
+      lastButtonState = {
+        a: gp.a,
+        b: gp.b
+      };
     };
 
     // Poll gamepad every frame

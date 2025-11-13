@@ -161,8 +161,36 @@ body::after {
   backdrop-filter: blur(12px) saturate(1.1);
 }
 
-/* Panels inside the game UI receive a glass finish similar to the
-   animated HUD.  Adjust border radius and background for a cohesive look. */
+/* =====================================================
+   QA: NEW PANEL SYSTEM (Floating titles)
+   ===================================================== */
+.panel {
+  background: var(--bg-glass);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-strong);
+  backdrop-filter: blur(12px) saturate(1.1);
+  padding: 24px;
+  position: relative;
+}
+.panel-title {
+  font-family: var(--font-arcade);
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: absolute;
+  top: -10px; /* Pull up to float above panel */
+  left: 20px;
+  background: var(--bg-panel);
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  z-index: 1;
+  text-shadow: 0 0 5px rgba(0,242,255,.4);
+}
+
+/* Panels inside the game UI */
 #sidebar .panel,
 #game-ui-overlay .panel {
   background: var(--bg-glass);
@@ -293,6 +321,84 @@ body::after {
   width: 100%;
 }
 
+/* =====================================================
+   QA: NEW FORM CONTROLS (Replaces old sliders/toggles)
+   ===================================================== */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch i {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: .3s;
+}
+.switch i::before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--ink-dim);
+  border-radius: 50%;
+  transition: .3s;
+}
+.switch input:checked + i {
+  background-color: var(--accent);
+}
+.switch input:checked + i::before {
+  transform: translateX(24px);
+  background-color: white;
+}
+
+.range {
+  -webkit-appearance: none;
+  width: 220px;
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.2);
+  outline: none;
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--ink);
+  border-radius: 50%;
+  border: 2px solid var(--bg-panel);
+  cursor: pointer;
+  transition: background .2s;
+}
+.range::-webkit-slider-thumb:hover {
+  background: var(--accent);
+}
+.range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--ink);
+  border-radius: 50%;
+  border: 2px solid var(--bg-panel);
+  cursor: pointer;
+  transition: background .2s;
+}
+.range::-moz-range-thumb:hover {
+  background: var(--accent);
+}
+
 /* Pause overlay glass backdrop reminiscent of the animated UI. */
 #pause-overlay.screen-overlay {
   background: rgba(0,0,0,0.55);
@@ -397,11 +503,30 @@ body::after {
 .menu-panel.active{ opacity:1; transform:translateX(0); }
 .menu-panel h3{ color:var(--gold); font-size:16px; margin-bottom:12px; font-family:var(--font-arcade); }
 
-.setting-item{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed #0d1422; font-size:12px; margin-bottom:6px; }
-.setting-item span{ color:var(--accent); }
-.slider-container{ display:flex; align-items:center; gap:10px; width:100%; }
-.slider{ flex:1; -webkit-appearance:none; height:6px; background:var(--bg-panel); border-radius:3px; outline:none; }
-.slider::-webkit-slider-thumb{ -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--accent); box-shadow:0 0 5px var(--glow); cursor:pointer; }
+.setting-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 0;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  font-size:13px;
+  margin-bottom:8px;
+}
+.setting-item:last-child {
+  border-bottom: none;
+}
+.setting-item span{
+  color:var(--ink);
+  font-weight: 500;
+}
+.setting-item .range {
+  width: 180px;
+}
+.slider-container{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
 
 /* ==================================
    5) IN-GAME HUD
@@ -480,86 +605,77 @@ body::after {
   z-index: 2;
 }
 
-/* Minimap and auto‑aim indicator */
+/* Minimap and auto‑aim indicator (QA Updated) */
 #minimap-container{
-  /* Larger minimap inspired by the animated UI.  Positioned in the bottom left
-     with additional padding.  Uses the glass style for a frosted look. */
   position:absolute;
   bottom:14px;
   left:14px;
-  width:180px; /* ✅ Ligero ajuste de tamaño */
-  height:180px;
-  padding:8px;
-  background:var(--bg-glass);
-  border:1px solid rgba(255,255,255,0.2); /* ✅ Borde más visible */
-  box-shadow: var(--shadow-strong);
-  border-radius: var(--radius);
+  width:200px;
+  height:200px;
   z-index:10;
   pointer-events:none;
 }
 
-/* Ensure the minimap canvas fills its container and inherits the
-   rounded corners. */
 #minimap-container canvas{
   width:100%;
-  height:100%;
-  border-radius: var(--radius);
+  height:calc(100% - 0px); /* Account for padding */
+  border-radius: 12px;
   background:#0a0c12;
-  border: 1px solid rgba(0, 242, 255, 0.3); /* ✅ Borde de acento */
+  border: 1px solid rgba(0, 242, 255, 0.3);
+  margin-top: 8px;
 }
 
-/* Auto‑aim indicator styled to float beneath the minimap in a glass
-   chip.  Uses accent colours from the palette and animates on hover. */
+/* Auto‑aim indicator */
 #auto-aim-indicator{
   position:absolute;
   top:14px;
-  right:14px;
-  padding:10px 15px;
-  background:rgba(0,242,255,.1);
-  border:1px solid rgba(255,255,255,0.1);
-  border-radius: var(--radius);
-  font-size:10px;
-  color:var(--accent);
+  right:320px + 28px; /* Next to sidebar */
+  width: 140px;
+  text-align: center;
   z-index:10;
   pointer-events:all;
   cursor:pointer;
   transition:.2s;
-  backdrop-filter: blur(6px);
 }
 
-/*
- * Room info display: shows the current room index and remaining enemies.
- * Positioned above the minimap on the left side.  Uses the same glass
- * aesthetic as the minimap container and auto-aim indicator.
- */
+#auto-aim-indicator #auto-aim-status {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  display: block;
+  margin-top: 4px;
+}
+
+#auto-aim-indicator:hover{
+  transform:scale(1.02);
+}
+#auto-aim-indicator.off #auto-aim-status{
+  color:var(--danger);
+}
+
+/* Room info display */
 #room-display{
   position:absolute;
-  bottom:210px;
+  bottom:230px;
   left:14px;
-  width:180px;
-  padding:6px 8px;
-  background:var(--bg-glass);
-  border:1px solid rgba(255,255,255,0.2);
-  border-radius: var(--radius);
-  font-size:10px;
-  color:var(--accent);
+  width:200px;
   z-index:10;
   pointer-events:none;
   text-align:left;
-  backdrop-filter: blur(4px);
+  font-size:11px;
 }
 
 #room-display .room-number{
-  font-weight:bold;
+  font-weight:600;
   color:var(--gold);
-  margin-bottom:2px;
+  margin-bottom:4px;
+  margin-top: 4px;
 }
 
 #room-display .enemy-count{
-  color:var(--rare);
+  color:var(--accent);
+  font-weight: 500;
 }
-#auto-aim-indicator:hover{ background:rgba(0,242,255,.2); transform:scale(1.05); }
-#auto-aim-indicator.off{ background:rgba(255,42,109,.2); border-color:var(--danger); color:var(--danger); }
 
 /* Sidebar panels - ✅ FIXED: Absolute positioning for right side HUD */
 #sidebar{
@@ -601,16 +717,53 @@ body.show-stats #sidebar .panel.stats { display: block; }
   text-shadow:0 0 5px rgba(0,242,255,.4);
 }
 
-/* Bars */
-.stat-bar{ margin-bottom:10px; }
-.stat-label{ font-size:10px; color:var(--text-dim); display:flex; justify-content:space-between; margin-bottom:4px; }
-.bar-container{ height:18px; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.1); border-radius:4px; overflow:hidden; position:relative; }
-.bar-fill{ height:100%; transition:width .3s ease; position:relative; overflow:hidden; }
-.bar-fill::after{ content:""; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent); animation:shimmer 2s infinite; }
+/* Bars (QA Updated) */
+.stat-bar{
+  margin-bottom:12px;
+}
+.stat-label{
+  font-size:11px;
+  color:var(--ink);
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:6px;
+  font-weight: 600;
+}
+.bar-container{
+  height:16px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:10px;
+  overflow:hidden;
+  position:relative;
+}
+.bar-fill{
+  height:100%;
+  transition:width .3s ease;
+  position:relative;
+  overflow:hidden;
+  box-shadow: 0 0 12px currentColor;
+}
+.bar-fill::after{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  animation:shimmer 2s infinite;
+}
 @keyframes shimmer{ to{ left:100%; } }
-#hp-bar{ background:linear-gradient(90deg, var(--danger), #ff6a00); }
-#energy-bar{ background:linear-gradient(90deg, #00e0ff, var(--accent)); }
-#xp-bar{ background:linear-gradient(90deg, var(--gold), #ff6a00); }
+#hp-bar{
+  background:linear-gradient(90deg, var(--danger), #ff7b9e);
+}
+#energy-bar{
+  background:linear-gradient(90deg, var(--accent-3), #24ffd1);
+}
+#xp-bar{
+  background:linear-gradient(90deg, #6aa2ff, #a8c2ff);
+}
 
 /* Stats grid */
 .stats-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:6px; }
@@ -815,18 +968,48 @@ body.show-stats #sidebar .panel.stats { display: block; }
           <!-- Settings -->
           <div id="settings-panel" class="tab-content" style="display:none">
             <h3>Ajustes del sistema</h3>
-            <div class="setting-item"><span>Música de fondo</span><button class="btn" id="music-toggle">Toggle On</button></div>
+
+            <div class="setting-item">
+              <span>Música de fondo</span>
+              <label class="switch">
+                <input type="checkbox" id="music-toggle" checked>
+                <i></i>
+              </label>
+            </div>
+
             <div class="setting-item">
               <span>Volumen SFX</span>
               <div class="slider-container">
-                <input type="range" min="0" max="100" value="85" class="slider" id="sfx-volume">
-                <span id="sfx-volume-value">85%</span>
+                <input type="range" min="0" max="100" value="85" class="range" id="sfx-volume">
+                <span id="sfx-volume-value" style="color:var(--accent); font-weight:600; min-width:45px;">85%</span>
               </div>
             </div>
-            <div class="setting-item"><span>Auto-Aim inicial</span><span>Activado</span></div>
-            <div class="setting-item"><span>Sombras y profundidad</span><button class="btn" id="graphics-quality">ULTRA</button></div>
-            <div class="setting-item"><span>Esquema de color</span><span>Neon Hikari</span></div>
-            <p style="font-size:10px; color:var(--text-dim); margin-top:12px">Las configuraciones se guardan automáticamente.</p>
+
+            <div class="setting-item">
+              <span>Auto-Aim inicial</span>
+              <label class="switch">
+                <input type="checkbox" id="auto-aim-toggle" checked>
+                <i></i>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <span>CRT Scanlines</span>
+              <label class="switch">
+                <input type="checkbox" id="scanlines-toggle" checked>
+                <i></i>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <span>UI Scale</span>
+              <div class="slider-container">
+                <input type="range" min="75" max="125" value="100" class="range" id="ui-scale">
+                <span id="ui-scale-value" style="color:var(--accent); font-weight:600; min-width:45px;">100%</span>
+              </div>
+            </div>
+
+            <p style="font-size:10px; color:var(--ink-dim); margin-top:16px; opacity:0.7;">Las configuraciones se guardan automáticamente.</p>
           </div>
 
           <!-- Guide -->
@@ -861,12 +1044,17 @@ body.show-stats #sidebar .panel.stats { display: block; }
   <div id="game-ui-overlay" class="screen-overlay">
     <div id="game-container">
       <div id="canvas-area">
-        <div id="minimap-container"><canvas id="minimap"></canvas></div>
-        <div id="auto-aim-indicator" title="Click para alternar auto-aim">
-          <span id="auto-aim-status">Auto-Aim: ON</span>
+        <div id="minimap-container" class="panel">
+          <h3 class="panel-title">Minimap</h3>
+          <canvas id="minimap"></canvas>
+        </div>
+        <div id="auto-aim-indicator" class="panel" title="Click para alternar auto-aim">
+          <h3 class="panel-title">Auto-Aim</h3>
+          <span id="auto-aim-status">ON</span>
         </div>
         <!-- Room and enemy counters for the current arena.  Updated by game.js. -->
-        <div id="room-display">
+        <div id="room-display" class="panel">
+          <h3 class="panel-title">Room Info</h3>
           <div class="room-number"><span id="current-room">Sala 1/1</span></div>
           <div class="enemy-count">Enemigos: <span id="enemies-remaining">0</span></div>
         </div>
@@ -874,13 +1062,13 @@ body.show-stats #sidebar .panel.stats { display: block; }
 
       <div id="sidebar">
         <div class="panel">
-          <div class="panel-title">Status</div>
+          <h3 class="panel-title">Status</h3>
           <div class="stat-bar">
             <div class="stat-label"><span>HP</span><span id="hp-text">100/100</span></div>
             <div class="bar-container"><div id="hp-bar" class="bar-fill" style="width:100%"></div></div>
           </div>
           <div class="stat-bar">
-            <div class="stat-label"><span>Energy</span><span id="energy-text">100/100</span></div>
+            <div class="stat-label"><span>Stamina</span><span id="energy-text">100/100</span></div>
             <div class="bar-container"><div id="energy-bar" class="bar-fill" style="width:100%"></div></div>
           </div>
           <div class="stat-bar">
@@ -890,7 +1078,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
         </div>
 
         <div class="panel stats">
-          <div class="panel-title">Stats</div>
+          <h3 class="panel-title">Stats</h3>
           <div class="stats-grid">
             <div class="stat-item"><div class="stat-name">Might</div><div id="stat-might" class="stat-value">0</div></div>
             <div class="stat-item"><div class="stat-name">Focus</div><div id="stat-focus" class="stat-value">0</div></div>
@@ -902,12 +1090,12 @@ body.show-stats #sidebar .panel.stats { display: block; }
         </div>
 
         <div class="panel">
-          <div class="panel-title">Inventory</div>
+          <h3 class="panel-title">Inventory</h3>
           <div id="inventory-grid"></div>
         </div>
 
         <div class="panel">
-          <div class="panel-title">Log</div>
+          <h3 class="panel-title">Log</h3>
           <div id="event-log">
             <div class="log-entry log-success">[00:00] Sistema iniciado</div>
             <div class="log-entry log-info">[00:00] Cargando assets…</div>
