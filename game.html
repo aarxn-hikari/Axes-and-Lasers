@@ -376,12 +376,13 @@ body::after {
 }
 #canvas-area{ position:relative; pointer-events:all; display:flex; flex-direction:column; }
 #game-canvas{
-  /* Position the game canvas relative to the document so the camera and input coordinate systems match. */
-  position:absolute;
-  top:0;
-  left:0;
-  width:100vw;
-  height:100vh;
+  /* Position the game canvas centered on the screen */
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  max-width:90vw;
+  max-height:90vh;
   z-index:1;
   background:#1a1a1a;
   border:3px solid var(--accent-dim);
