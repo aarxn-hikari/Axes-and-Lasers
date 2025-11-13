@@ -332,8 +332,8 @@ const DungeonGenerator = {
     // ============================
     let attempts = maxRooms * 5;
     while (rooms.length < maxRooms && attempts-- > 0) {
-      const w = Math.floor(Math.random() * 8 + 8) * tileSize; // ancho 8–15 tiles (más grande)
-      const h = Math.floor(Math.random() * 8 + 8) * tileSize; // alto 8–15 tiles (más grande)
+      const w = Math.floor(Math.random() * 12 + 15) * tileSize; // ancho 15–26 tiles (grande para combate)
+      const h = Math.floor(Math.random() * 12 + 15) * tileSize; // alto 15–26 tiles (grande para combate)
       const x = Math.floor(Math.random() * (pixelWidth - w));
       const y = Math.floor(Math.random() * (pixelHeight - h));
 
@@ -1732,18 +1732,29 @@ startNewGame() {
 
     // Buscar tile de suelo alejado del jugador
     let tries = 0;
-    let ex = 0, ey = 0;
+    let ex = null, ey = null;
     while (tries < 200) {
       const tx = Math.floor(this.rng() * this.cols);
       const ty = Math.floor(this.rng() * this.rows);
+      // ✅ Solo spawn en piso (tipo 0), no en paredes (1) ni void (3)
       if (this.map[ty][tx] === 0) {
-        ex = tx * this.tileSize + this.tileSize / 2;
-        ey = ty * this.tileSize + this.tileSize / 2;
-        const dx = ex - this.player.x;
-        const dy = ey - this.player.y;
-        if (Math.hypot(dx, dy) > this.tileSize * 10) break;
+        const testX = tx * this.tileSize + this.tileSize / 2;
+        const testY = ty * this.tileSize + this.tileSize / 2;
+        const dx = testX - this.player.x;
+        const dy = testY - this.player.y;
+        if (Math.hypot(dx, dy) > this.tileSize * 10) {
+          ex = testX;
+          ey = testY;
+          break;
+        }
       }
       tries++;
+    }
+
+    // ✅ Si no se encontró posición válida, no spawne enemigo
+    if (ex === null || ey === null) {
+      console.warn('⚠️ No se encontró posición válida para spawn de enemigo');
+      return;
     }
 
     const types = ['grunt', 'rusher', 'shooter', 'tank'];
