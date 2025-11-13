@@ -388,15 +388,6 @@ body::after {
   pointer-events:none;
   display:block;
 }
-#canvas-area{ position:relative; pointer-events:all; display:flex; flex-direction:column; }
-#game-canvas{
-  /* Position the game canvas centered on the screen */
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%, -50%);
-  max-width:90vw;
-  max-height:90vh;
 #canvas-area{
   position:absolute;
   top:0;
@@ -405,8 +396,20 @@ body::after {
   height:100%;
   pointer-events:all;
 }
-#game-canvas{
-  /* ✅ FIXED: Removed border, proper fullscreen positioning */
+
+/* Canvas container and layers */
+#canvas-container {
+  background: #0c1119;
+}
+
+#game-canvas, #hud-canvas {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+#game-canvas {
+  /* ✅ Fullscreen positioning for game world */
   position:fixed;
   top:0;
   left:0;
@@ -415,10 +418,14 @@ body::after {
   z-index:1;
   background:#1a1a1a;
   box-shadow:0 0 30px rgba(0,0,0,.5);
-  image-rendering:pixelated;
   display:block;
   opacity:1;
   pointer-events:auto;
+}
+
+#hud-canvas {
+  /* ✅ HUD overlay on top of game canvas */
+  z-index: 2;
 }
 
 /* Minimap and auto‑aim indicator */
@@ -676,16 +683,24 @@ body.show-stats #sidebar .panel.stats { display: block; }
 </head>
 <body class="grid-bg">
 
-<!-- Background canvas: used by the game engine to render the world.  The
-     `game.js` module handles drawing to this canvas. -->
-<canvas id="game-canvas"
-        role="application"
-        aria-label="Axes &amp; Lasers gameplay canvas"
-        tabindex="0"
-        style="display:block; opacity:1;">
-  <p>Your browser does not support the HTML5 canvas element required to play this game.</p>
-  <p>Please upgrade to a modern browser.</p>
-</canvas>
+<!-- Canvas Layer Structure: Game (background) + HUD (overlay) -->
+<div id="canvas-container" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;">
+  <!-- Background canvas: Game world rendering -->
+  <canvas id="game-canvas"
+          role="application"
+          aria-label="Axes &amp; Lasers gameplay canvas"
+          tabindex="0"
+          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block;">
+    <p>Your browser does not support the HTML5 canvas element required to play this game.</p>
+    <p>Please upgrade to a modern browser.</p>
+  </canvas>
+
+  <!-- HUD overlay canvas: UI elements, minimap, stats -->
+  <canvas id="hud-canvas"
+          aria-label="HUD overlay"
+          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; pointer-events: none;">
+  </canvas>
+</div>
 
 <!-- Unified UI container.  All screens are children of this wrapper.  Only
      the active overlay will be displayed at any given time. -->

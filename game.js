@@ -18,8 +18,8 @@
 
 const GameConfig = {
   TILE_SIZE: 32,
-  MAP_WIDTH: 60,
-  MAP_HEIGHT: 60,
+  MAP_WIDTH: 120,  // ✅ Aumentado de 60 a 120 para mapas más grandes
+  MAP_HEIGHT: 80,  // ✅ Aumentado de 60 a 80 (proporción ~16:10)
   STAMINA_REGEN: 45, // (Souls-like) Tasa de regeneración base
   DASH_COST: 25,
   SHOOT_COST: 2,
@@ -332,8 +332,8 @@ const DungeonGenerator = {
     // ============================
     let attempts = maxRooms * 5;
     while (rooms.length < maxRooms && attempts-- > 0) {
-      const w = Math.floor(Math.random() * 5 + 3) * tileSize; // ancho 3–7 tiles
-      const h = Math.floor(Math.random() * 5 + 3) * tileSize; // alto 3–7 tiles
+      const w = Math.floor(Math.random() * 8 + 8) * tileSize; // ancho 8–15 tiles (más grande)
+      const h = Math.floor(Math.random() * 8 + 8) * tileSize; // alto 8–15 tiles (más grande)
       const x = Math.floor(Math.random() * (pixelWidth - w));
       const y = Math.floor(Math.random() * (pixelHeight - h));
 
@@ -996,64 +996,76 @@ this.el('random-seed-btn').addEventListener('click', async () => {
   },
 
 initCanvas() {
-  const canvas = this.el('game-canvas');
-  if (!canvas) {
-    console.error('❌ Canvas element not found!');
+  const gameCanvas = this.el('game-canvas');
+  const hudCanvas = this.el('hud-canvas');
+
+  if (!gameCanvas || !hudCanvas) {
+    console.error('❌ Canvas elements not found!');
     return;
   }
-  
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    console.error('❌ Failed to get canvas context!');
+
+  const gameCtx = gameCanvas.getContext('2d');
+  const hudCtx = hudCanvas.getContext('2d');
+
+  if (!gameCtx || !hudCtx) {
+    console.error('❌ Failed to get canvas contexts!');
     return;
   }
-  
-  console.log('🎨 Initializing canvas...');
+
+  console.log('🎨 Initializing dual canvas system...');
 
   const resize = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    console.log(`📐 Canvas resized: ${canvas.width}x${canvas.height}`);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    // Resize both canvases
+    gameCanvas.width = w;
+    gameCanvas.height = h;
+    hudCanvas.width = w;
+    hudCanvas.height = h;
+
+    console.log(`📐 Canvases resized: ${w}x${h}`);
     drawGrid();
   };
 
   const drawGrid = () => {
-    const w = canvas.width;
-    const h = canvas.height;
-    
-    ctx.fillStyle = '#0c1119';
-    ctx.fillRect(0, 0, w, h);
-    
-    ctx.strokeStyle = 'rgba(0,242,255,.08)';
-    ctx.lineWidth = 1;
-    
+    const w = gameCanvas.width;
+    const h = gameCanvas.height;
+
+    // Draw grid on game canvas
+    gameCtx.fillStyle = '#0c1119';
+    gameCtx.fillRect(0, 0, w, h);
+
+    gameCtx.strokeStyle = 'rgba(0,242,255,.08)';
+    gameCtx.lineWidth = 1;
+
     const gridSize = 64;
     for (let x = 0; x < w; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
+      gameCtx.beginPath();
+      gameCtx.moveTo(x, 0);
+      gameCtx.lineTo(x, h);
+      gameCtx.stroke();
     }
     for (let y = 0; y < h; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
+      gameCtx.beginPath();
+      gameCtx.moveTo(0, y);
+      gameCtx.lineTo(w, y);
+      gameCtx.stroke();
     }
 
-    ctx.fillStyle = 'rgba(255,255,255,.08)';
-    ctx.font = '48px "Press Start 2P"';
-    ctx.textAlign = 'center';
-    ctx.fillText('AXES & LASERS', w / 2, h / 2 - 48);
-    
-    ctx.fillStyle = 'rgba(0,242,255,.25)';
-    ctx.font = '20px "Press Start 2P"';
-    ctx.fillText('Resaca Cósmica', w / 2, h / 2);
+    gameCtx.fillStyle = 'rgba(255,255,255,.08)';
+    gameCtx.font = '48px "Press Start 2P"';
+    gameCtx.textAlign = 'center';
+    gameCtx.fillText('AXES & LASERS', w / 2, h / 2 - 48);
+
+    gameCtx.fillStyle = 'rgba(0,242,255,.25)';
+    gameCtx.font = '20px "Press Start 2P"';
+    gameCtx.fillText('Resaca Cósmica', w / 2, h / 2);
   };
 
   window.addEventListener('resize', resize);
   resize();
-  console.log('✅ Canvas initialized');
+  console.log('✅ Dual canvas system initialized (Game + HUD)');
 },
   log(msg, type = 'info') {
     const log = this.el('event-log');
@@ -2236,6 +2248,7 @@ loop(now) {
   if (!this.paused) {
     this.update(cappedDt);
     this.draw();
+    this.drawHUD();
   }
 
   // Actualizar HUD
@@ -3044,23 +3057,6 @@ loop(now) {
       }
     }
 
-    // Indicador de estado de sala
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(20, h - 60, 200, 40);
-    ctx.font = 'bold 16px Arial';
-    if (this.roomState === 'Fight') {
-      ctx.fillStyle = '#ff2a6d';
-      ctx.fillText('⚔ COMBATE', 30, h - 35);
-    } else if (this.roomState === 'Clear') {
-      ctx.fillStyle = '#00ff88';
-      ctx.fillText('✓ COMPLETADO', 30, h - 35);
-      ctx.font = '12px Arial';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText('Presiona N para avanzar', 30, h - 15);
-    } else if (this.roomState === 'Transition') {
-      ctx.fillStyle = '#ffb300';
-      ctx.fillText('→ TRANSICIÓN...', 30, h - 35);
-    }
     // ✅ Dibuja la puerta de salida si la sala está despejada
     const roomForDoor = this.rooms ? this.rooms[this.currentRoomIndex] : null;
     if (this.roomState === 'Clear' && roomForDoor) {
@@ -3094,6 +3090,40 @@ loop(now) {
     }
     // Minimapa
     this.drawMinimap();
+  },
+
+  // ========================================================================
+  // RENDERIZADO DE HUD (Canvas Overlay)
+  // ========================================================================
+
+  drawHUD() {
+    const hudCanvas = UIManager.el('hud-canvas');
+    if (!hudCanvas) return;
+
+    const hudCtx = hudCanvas.getContext('2d');
+    const w = hudCanvas.width;
+    const h = hudCanvas.height;
+
+    // Limpiar HUD canvas
+    hudCtx.clearRect(0, 0, w, h);
+
+    // Indicador de estado de sala
+    hudCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    hudCtx.fillRect(20, h - 60, 200, 40);
+    hudCtx.font = 'bold 16px Arial';
+    if (this.roomState === 'Fight') {
+      hudCtx.fillStyle = '#ff2a6d';
+      hudCtx.fillText('⚔ COMBATE', 30, h - 35);
+    } else if (this.roomState === 'Clear') {
+      hudCtx.fillStyle = '#00ff88';
+      hudCtx.fillText('✓ COMPLETADO', 30, h - 35);
+      hudCtx.font = '12px Arial';
+      hudCtx.fillStyle = '#ffffff';
+      hudCtx.fillText('Presiona N para avanzar', 30, h - 15);
+    } else if (this.roomState === 'Transition') {
+      hudCtx.fillStyle = '#ffb300';
+      hudCtx.fillText('→ TRANSICIÓN...', 30, h - 35);
+    }
   },
 
   drawMinimap() {
