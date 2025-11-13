@@ -355,7 +355,19 @@ body::after {
    5) IN-GAME HUD
    The heads‑up display shows the player's stats, inventory and event log
    during gameplay.  The content is updated by the game engine. */
-#game-ui-overlay{ position:absolute; inset:0; display:none; pointer-events:none; z-index:50; }
+#game-ui-overlay{
+  position:fixed !important; /* ✅ FIXED: Use fixed positioning */
+  top:0 !important;
+  left:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  display:none;
+  pointer-events:none;
+  z-index:50;
+  /* ✅ CRITICAL FIX: Override centering inherited from .screen-overlay */
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+}
 #game-ui-overlay.screen-overlay{
   /* Override inherited overlay styling so the game world is visible. */
   background: none !important;
@@ -367,12 +379,14 @@ body::after {
   display: block !important;
 }
 #game-container{
-  display:grid;
-  grid-template-columns:1fr 320px;
+  /* ✅ FIXED: Removed grid padding, use absolute positioning for HUD */
+  position:absolute;
+  top:0;
+  left:0;
+  width:100vw;
   height:100vh;
-  gap:16px;
-  padding:16px;
   pointer-events:none;
+  display:block;
 }
 #canvas-area{ position:relative; pointer-events:all; display:flex; flex-direction:column; }
 #game-canvas{
@@ -383,9 +397,23 @@ body::after {
   transform:translate(-50%, -50%);
   max-width:90vw;
   max-height:90vh;
+#canvas-area{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  pointer-events:all;
+}
+#game-canvas{
+  /* ✅ FIXED: Removed border, proper fullscreen positioning */
+  position:fixed;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
   z-index:1;
   background:#1a1a1a;
-  border:3px solid var(--accent-dim);
   box-shadow:0 0 30px rgba(0,0,0,.5);
   image-rendering:pixelated;
   display:block;
@@ -474,8 +502,21 @@ body::after {
 #auto-aim-indicator:hover{ background:rgba(0,242,255,.2); transform:scale(1.05); }
 #auto-aim-indicator.off{ background:rgba(255,42,109,.2); border-color:var(--danger); color:var(--danger); }
 
-/* Sidebar panels */
-#sidebar{ display:flex; flex-direction:column; gap:12px; overflow:auto; max-height:100vh; padding-bottom:20px; pointer-events:auto !important; }
+/* Sidebar panels - ✅ FIXED: Absolute positioning for right side HUD */
+#sidebar{
+  position:fixed;
+  top:14px;
+  right:14px;
+  width:320px;
+  max-height:calc(100vh - 28px);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow:auto;
+  padding-bottom:20px;
+  pointer-events:auto !important;
+  z-index:60;
+}
 .panel{
   /* Liquid Glass panels */
   background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
@@ -581,9 +622,10 @@ body.show-stats #sidebar .panel.stats { display: block; }
 /* ==================================
    7) RESPONSIVE
    Adjust layout for smaller screens. */
-@media (max-width:1400px){ #game-container{ grid-template-columns:1fr 300px; } }
+@media (max-width:1400px){
+  #sidebar{ width:280px; }
+}
 @media (max-width:1024px){
-  #game-container{ grid-template-columns:1fr; }
   #sidebar, #controls-hint{ display:none; }
   .main-menu-container{ width:95%; height:95%; }
   .menu-content{ flex-direction:column; }
