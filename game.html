@@ -388,6 +388,15 @@ body::after {
   pointer-events:none;
   display:block;
 }
+#canvas-area{ position:relative; pointer-events:all; display:flex; flex-direction:column; }
+#game-canvas{
+  /* Position the game canvas centered on the screen */
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  max-width:90vw;
+  max-height:90vh;
 #canvas-area{
   position:absolute;
   top:0;

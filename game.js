@@ -308,47 +308,65 @@ const GamepadManager = {
 };
 
 // ============================================================================
-// 4) GENERADOR DE DUNGEONS (Sin cambios)
+// 4) GENERADOR DE DUNGEONS (Nuevo generador mejorado)
 // ============================================================================
 
 const DungeonGenerator = {
   generate(params = {}) {
     const maxRooms = params.rooms || 20;
-    const loopRatio = params.loopRatio || 0.15;
+    const voidDensity = params.voidDensity || 0.02;
     const width = params.width || GameConfig.MAP_WIDTH;
     const height = params.height || GameConfig.MAP_HEIGHT;
+    const tileSize = GameConfig.TILE_SIZE;
 
-    const rooms = [];
-    const corridors = [];
+    // Convertir dimensiones de tiles a píxeles para el nuevo generador
+    const pixelWidth = width * tileSize;
+    const pixelHeight = height * tileSize;
 
-    // 1) Generar salas
+    let rooms = [];
+    let corridors = [];
+    let mapTiles = [];
+
+    // ============================
+    // 1) ROOMS RECTANGULARES
+    // ============================
     let attempts = maxRooms * 5;
     while (rooms.length < maxRooms && attempts-- > 0) {
-      const w = randInt(3, 7);
-      const h = randInt(3, 7);
-      const x = randInt(1, width - w - 1);
-      const y = randInt(1, height - h - 1);
+      const w = Math.floor(Math.random() * 5 + 3) * tileSize; // ancho 3–7 tiles
+      const h = Math.floor(Math.random() * 5 + 3) * tileSize; // alto 3–7 tiles
+      const x = Math.floor(Math.random() * (pixelWidth - w));
+      const y = Math.floor(Math.random() * (pixelHeight - h));
 
       const overlap = rooms.some(r =>
-        x < r.x + r.w && x + w > r.x &&
-        y < r.y + r.h && y + h > r.y
+        x < r.x + r.w &&
+        x + w > r.x &&
+        y < r.y + r.h &&
+        y + h > r.y
       );
-
       if (!overlap) {
+        const id = rooms.length;
         rooms.push({
-          x, y, w, h,
-          id: rooms.length,
+          id,
+          x,
+          y,
+          w,
+          h,
           center: { x: x + w / 2, y: y + h / 2 }
         });
       }
     }
 
-    // 2) Conectar con MST + loops
-    if (rooms.length > 1) {
-      const edges = [];
-      for (let i = 0; i < rooms.length; i++) {
-        const current = rooms[i];
-        const distances = rooms
+    // ============================
+    // 2) GRAFO + MST + PASILLOS
+    // ============================
+    const hubRooms = rooms;
+    const edges = [];
+
+    if (hubRooms.length > 1) {
+      // Distancias entre centros y aristas cortas
+      for (let i = 0; i < hubRooms.length; i++) {
+        const current = hubRooms[i];
+        const distances = hubRooms
           .map((target, j) => ({
             dist: Math.hypot(
               current.center.x - target.center.x,
@@ -359,75 +377,86 @@ const DungeonGenerator = {
           }))
           .sort((a, b) => a.dist - b.dist);
 
+        // Conectar a 1–3 vecinos cercanos
         for (let k = 1; k <= 3 && k < distances.length; k++) {
           const target = distances[k].room;
-          const id = [
+          const edgeId = [
             Math.min(current.id, target.id),
             Math.max(current.id, target.id)
-          ].join('-');
-          
-          if (!edges.some(e => e.id === id)) {
+          ].join("-");
+          if (!edges.some(e => e.id === edgeId)) {
             edges.push({
               r1: current,
               r2: target,
               weight: distances[k].dist,
-              id,
+              id: edgeId,
               isMST: false
             });
           }
         }
       }
 
+      // Kruskal para MST
       edges.sort((a, b) => a.weight - b.weight);
-      const dsu = new DSU(rooms.length);
-      const mst = [];
+      const mstEdges = [];
+      const dsu = new DSU(hubRooms.length);
 
-      for (const e of edges) {
-        if (dsu.union(e.r1.id, e.r2.id)) {
-          e.isMST = true;
-          mst.push(e);
+      for (const edge of edges) {
+        if (dsu.union(edge.r1.id, edge.r2.id)) {
+          edge.isMST = true;
+          mstEdges.push(edge);
         }
       }
 
-      const nonMst = edges.filter(e => !e.isMST);
-      const extra = Math.ceil(nonMst.length * loopRatio);
-      const finalEdges = [...mst];
+      // Un pequeño % de conexiones extra para loops
+      const nonMstEdges = edges.filter(e => !e.isMST);
+      const numExtraEdges = Math.ceil(nonMstEdges.length * 0.15);
+      const finalEdges = [...mstEdges];
 
-      for (let i = 0; i < extra && nonMst.length; i++) {
-        const idx = randInt(0, nonMst.length - 1);
-        finalEdges.push(nonMst.splice(idx, 1)[0]);
+      for (let i = 0; i < numExtraEdges && nonMstEdges.length > 0; i++) {
+        const index = Math.floor(Math.random() * nonMstEdges.length);
+        finalEdges.push(nonMstEdges.splice(index, 1)[0]);
       }
 
-      // 3) Crear corredores
-      for (const e of finalEdges) {
-        const c1 = e.r1.center;
-        const c2 = e.r2.center;
-        
+      // Pasillos ortogonales (en L) entre centros
+      for (const edge of finalEdges) {
+        const c1 = edge.r1.center;
+        const c2 = edge.r2.center;
+
+        // Horizontal
         corridors.push({
-          x: Math.floor(Math.min(c1.x, c2.x)),
-          y: Math.floor(c1.y),
-          w: Math.ceil(Math.abs(c1.x - c2.x)) + 1,
-          h: 1
+          x: Math.min(c1.x, c2.x),
+          y: c1.y - tileSize / 4,
+          w: Math.abs(c1.x - c2.x) + tileSize / 2,
+          h: tileSize / 2
         });
-        
+
+        // Vertical
         corridors.push({
-          x: Math.floor(c2.x),
-          y: Math.floor(Math.min(c1.y, c2.y)),
-          w: 1,
-          h: Math.ceil(Math.abs(c1.y - c2.y)) + 1
+          x: c2.x - tileSize / 4,
+          y: Math.min(c1.y, c2.y),
+          w: tileSize / 2,
+          h: Math.abs(c1.y - c2.y) + tileSize / 2
         });
       }
     }
 
-    // 4) Construir tilemap
-    const map = Array.from({ length: height }, () => Array(width).fill(1));
+    // ============================
+    // 3) TILEMAP: 0 piso, 1 pared, 3 void
+    // ============================
+    const mapW = Math.ceil(pixelWidth / tileSize);
+    const mapH = Math.ceil(pixelHeight / tileSize);
 
-    const carve = (element) => {
-      for (let y = element.y; y < element.y + element.h && y < height; y++) {
-        for (let x = element.x; x < element.x + element.w && x < width; x++) {
-          if (x >= 0 && y >= 0) {
-            map[y][x] = 0;
-          }
+    mapTiles = new Array(mapW).fill(0).map(() => new Array(mapH).fill(1)); // todo paredes
+
+    const carve = entity => {
+      const startX = Math.floor(entity.x / tileSize);
+      const endX = Math.ceil((entity.x + entity.w) / tileSize);
+      const startY = Math.floor(entity.y / tileSize);
+      const endY = Math.ceil((entity.y + entity.h) / tileSize);
+      for (let x = Math.max(0, startX); x < Math.min(mapW, endX); x++) {
+        for (let y = Math.max(0, startY); y < Math.min(mapH, endY); y++) {
+          mapTiles[x][y] = 0; // piso
         }
       }
     };
@@ -435,19 +464,71 @@ const DungeonGenerator = {
     rooms.forEach(carve);
     corridors.forEach(carve);
 
-    // Agregar metadata de anchura y altura para que el motor pueda conocer las dimensiones del mapa
-    return { map, rooms, corridors, width: map[0].length, height: map.length };
+    // ============================
+    // 4) HOYOS (void = 3)
+    // ============================
+    if (rooms.length > 0) {
+      const startRoom = rooms[0];
+      const srCx = Math.floor((startRoom.x + startRoom.w / 2) / tileSize);
+      const srCy = Math.floor((startRoom.y + startRoom.h / 2) / tileSize);
+
+      for (let x = 1; x < mapW - 1; x++) {
+        for (let y = 1; y < mapH - 1; y++) {
+          if (mapTiles[x][y] !== 0) continue; // sólo desde piso
+          const dx = x - srCx;
+          const dy = y - srCy;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 3) continue; // minVoidRadiusTiles
+          if (Math.random() < voidDensity) {
+            const size = 1 + Math.floor(Math.random() * 3);
+            for (let ox = -size; ox <= size; ox++) {
+              for (let oy = -size; oy <= size; oy++) {
+                const nx = x + ox;
+                const ny = y + oy;
+                if (nx <= 0 || ny <= 0 || nx >= mapW - 1 || ny >= mapH - 1) continue;
+                if (mapTiles[nx][ny] === 0) mapTiles[nx][ny] = 3; // void
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // ============================
+    // 5) Convertir a formato original (map[y][x])
+    // ============================
+    const map = Array.from({ length: mapH }, () => Array(mapW).fill(1));
+    for (let x = 0; x < mapW; x++) {
+      for (let y = 0; y < mapH; y++) {
+        map[y][x] = mapTiles[x][y];
+      }
+    }
+
+    // Convertir rooms de píxeles a tiles
+    const roomsInTiles = rooms.map(r => ({
+      id: r.id,
+      x: Math.floor(r.x / tileSize),
+      y: Math.floor(r.y / tileSize),
+      w: Math.ceil(r.w / tileSize),
+      h: Math.ceil(r.h / tileSize),
+      center: {
+        x: r.center.x / tileSize,
+        y: r.center.y / tileSize
+      }
+    }));
+
+    return { map, rooms: roomsInTiles, corridors, width: mapW, height: mapH };
   },
 
   generateFromAudio(audioSnapshot) {
     const { low, mid, high, rms } = audioSnapshot;
-    
+
     const rooms = Math.max(10, Math.min(40, Math.round(12 + rms * 20 + low * 10)));
-    const loopRatio = Math.max(0.10, Math.min(0.35, 0.10 + high * 0.25));
-    
+    const voidDensity = Math.max(0.01, Math.min(0.05, 0.02 + high * 0.03));
+
     return this.generate({
       rooms,
-      loopRatio,
+      voidDensity,
       width: GameConfig.MAP_WIDTH,
       height: GameConfig.MAP_HEIGHT
     });
@@ -2228,10 +2309,11 @@ loop(now) {
       b.x += b.vx * dt;
       b.y += b.vy * dt;
       b.lifetime -= dt;
-      // Verificar expiración o colisión con paredes
+      // Verificar expiración o colisión con paredes y void
       const tx = Math.floor(b.x / this.tileSize);
       const ty = Math.floor(b.y / this.tileSize);
-      if (b.lifetime <= 0 || tx < 0 || ty < 0 || tx >= this.cols || ty >= this.rows || this.map[ty][tx] === 1) {
+      const tile = (tx >= 0 && ty >= 0 && tx < this.cols && ty < this.rows) ? this.map[ty][tx] : 1;
+      if (b.lifetime <= 0 || tx < 0 || ty < 0 || tx >= this.cols || ty >= this.rows || tile === 1 || tile === 3) {
         bulletAlive = false;
       }
       // Procesar colisiones si la bala sigue viva
@@ -2455,7 +2537,8 @@ loop(now) {
     }
     for (let ty = minY; ty <= maxY; ty++) {
       for (let tx = minX; tx <= maxX; tx++) {
-        if (this.map[ty][tx] === 1) return true;
+        const tile = this.map[ty][tx];
+        if (tile === 1 || tile === 3) return true; // Pared o void
       }
     }
     return false;
@@ -2728,13 +2811,19 @@ loop(now) {
           const screenX = x * this.tileSize - this.camera.x;
           const screenY = y * this.tileSize - this.camera.y;
           if (tile === 1) {
+            // Pared
             ctx.fillStyle = '#0c1833';
             ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
-          } else {
+          } else if (tile === 0) {
+            // Piso
             ctx.fillStyle = '#1d5ea8';
             ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
             ctx.strokeStyle = 'rgba(0,242,255,0.35)';
             ctx.strokeRect(screenX, screenY, this.tileSize, this.tileSize);
+          } else if (tile === 3) {
+            // Void (hoyo/abismo)
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
           }
         }
       }
@@ -2752,13 +2841,19 @@ loop(now) {
           const screenX = x * this.tileSize - this.camera.x;
           const screenY = y * this.tileSize - this.camera.y;
           if (tile === 1) {
+            // Pared
             ctx.fillStyle = '#0c1833';
             ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
-          } else {
+          } else if (tile === 0) {
+            // Piso
             ctx.fillStyle = '#1d5ea8';
             ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
             ctx.strokeStyle = 'rgba(0,242,255,0.35)';
             ctx.strokeRect(screenX, screenY, this.tileSize, this.tileSize);
+          } else if (tile === 3) {
+            // Void (hoyo/abismo)
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
           }
         }
       }
