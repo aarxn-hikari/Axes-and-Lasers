@@ -194,11 +194,11 @@ body::after {
    main menu, in‑game HUD, pause menu and level up menu.  Only one
    overlay is visible at a time.  The overlays are controlled via
    JavaScript (see game.js). */
-#unified-ui{ 
-  position:fixed; 
-  inset:0; 
-  pointer-events:none; 
-  z-index:1000; 
+#app{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:1000;
 }
 .screen-overlay{
   position:absolute; 
@@ -898,7 +898,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
 .screen-overlay { z-index:100; }
 
 /* Layer 1000: System UI container */
-#unified-ui { z-index:1000; }
+#app { z-index:1000; }
 
 /* Ensure HUD elements receive input even when overlay is transparent */
 #sidebar,
@@ -931,12 +931,12 @@ body.show-stats #sidebar .panel.stats { display: block; }
   </canvas>
 </div>
 
-<!-- Unified UI container.  All screens are children of this wrapper.  Only
+<!-- App container: All screens are children of this wrapper.  Only
      the active overlay will be displayed at any given time. -->
-<div id="unified-ui">
+<div id="app">
 
   <!-- Boot (BIOS) screen -->
-  <div id="boot-sequence-overlay" class="screen-overlay active">
+  <div id="boot-sequence-overlay" class="screen-overlay screen-boot active">
     <!-- New boot logo inspired by the animated shell.  The original bios
          log and start button are still present but hidden so that
          existing game.js logic continues to function. -->
@@ -953,7 +953,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
   </div>
 
   <!-- Title / Studio splash -->
-  <div id="title-screen-overlay" class="screen-overlay centered">
+  <div id="title-screen-overlay" class="screen-overlay screen-title centered">
     <div class="title-card-container glass">
       <div class="studio-logo title-font">HIKARI CREATIVE STUDIOS</div>
       <div class="studio-tagline accent" id="studio-tagline">// Arquitectura orientada a eventos //</div>
@@ -963,7 +963,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
   </div>
 
   <!-- Main Menu -->
-  <div id="main-menu-overlay" class="screen-overlay centered">
+  <div id="main-menu-overlay" class="screen-overlay screen-main centered">
     <div class="main-menu-container" id="main-menu-container">
       <h2 class="menu-header">AXES &amp; LASERS</h2>
       <p class="subtitle" style="color:var(--ink-dim); font-size:12px; margin-bottom:12px;">un rogue‑lite sobre un enano medieval borracho contra robots cyberpunk del futuro</p>
@@ -1065,10 +1065,10 @@ body.show-stats #sidebar .panel.stats { display: block; }
   </div>
 
   <!-- Game HUD -->
-  <div id="game-ui-overlay" class="screen-overlay">
+  <div id="game-ui-overlay" class="screen-overlay screen-game">
     <div id="game-container">
       <div id="canvas-area">
-        <div id="minimap-container" class="panel">
+        <div id="minimap-container" class="panel hud-minimap">
           <h3 class="panel-title">Minimap</h3>
           <canvas id="minimap"></canvas>
         </div>
@@ -1085,7 +1085,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
       </div>
 
       <div id="sidebar">
-        <div class="panel">
+        <div class="panel hud-status">
           <h3 class="panel-title">Status</h3>
           <div class="stat-bar">
             <div class="stat-label"><span>HP</span><span id="hp-text">100/100</span></div>
@@ -1113,7 +1113,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel hud-inventory">
           <h3 class="panel-title">Inventory</h3>
           <div id="inventory-grid"></div>
         </div>
@@ -1130,7 +1130,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
   </div>
 
   <!-- Pause menu -->
-  <div id="pause-overlay" class="screen-overlay">
+  <div id="pause-overlay" class="screen-overlay screen-pause">
     <div class="main-menu-container" style="height:auto; max-width:720px">
       <h2 class="menu-header">Pausa</h2>
       <div class="menu-content" style="flex-direction:column; align-items:center; gap:10px">
@@ -1142,7 +1142,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
   </div>
 
   <!-- Level Up screen -->
-  <div id="levelup-overlay" class="screen-overlay">
+  <div id="levelup-overlay" class="screen-overlay screen-levelup">
     <div class="main-menu-container" style="max-width:820px; height:auto; text-align:center">
       <h2 class="menu-header" style="color:var(--gold)">Level Up</h2>
       <p style="margin-bottom:10px">Elige una mejora para tu build</p>
@@ -1152,7 +1152,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
     </div>
   </div>
 
-</div> <!-- /unified-ui -->
+</div> <!-- /app -->
 
 <!-- Game engine: The core logic and UI management is implemented in
      this module.  It uses modern JavaScript (ES6 modules) and must
