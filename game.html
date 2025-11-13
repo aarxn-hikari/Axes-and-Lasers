@@ -394,10 +394,10 @@ body::after {
 
 /* Minimap and auto‑aim indicator */
 #minimap-container{
-  /* Larger minimap inspired by the animated UI.  Positioned in the top left
+  /* Larger minimap inspired by the animated UI.  Positioned in the bottom left
      with additional padding.  Uses the glass style for a frosted look. */
   position:absolute;
-  top:14px;
+  bottom:14px;
   left:14px;
   width:180px; /* ✅ Ligero ajuste de tamaño */
   height:180px;
@@ -441,12 +441,12 @@ body::after {
 
 /*
  * Room info display: shows the current room index and remaining enemies.
- * Positioned below the minimap on the left side.  Uses the same glass
+ * Positioned above the minimap on the left side.  Uses the same glass
  * aesthetic as the minimap container and auto-aim indicator.
  */
 #room-display{
   position:absolute;
-  top:210px;
+  bottom:210px;
   left:14px;
   width:180px;
   padding:6px 8px;
