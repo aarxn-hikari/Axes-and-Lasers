@@ -131,23 +131,6 @@ body::after {
 .title-font { font-family: var(--font-arcade); letter-spacing: 2px; }
 .accent { color: var(--accent); }
 
-/* Boot logo styling taken from the animated shell.  The boot‑sigil
-   renders a glowing radial emblem reminiscent of retro consoles. */
-.boot-logo { position: relative; display: grid; gap: 20px; text-align: center; }
-.boot-sigil {
-  width: 160px;
-  height: 160px;
-  margin: 0 auto;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 60% 40%, var(--accent), transparent 55%),
-    radial-gradient(circle at 40% 60%, var(--accent-2), transparent 55%),
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), transparent 60%);
-  filter: drop-shadow(0 0 12px rgba(0,224,255,0.6));
-}
-.boot-text { font-size: 18px; text-transform: uppercase; letter-spacing: 8px; color: var(--ink); opacity: .9; }
-.boot-sub { color: var(--ink-dim); font-size: 12px; letter-spacing: 4px; }
-
 /* Apply the glass effect to the main menu container and panels.  These
    selectors enhance the existing UI with subtle translucency and
    soften the edges. */
@@ -406,40 +389,81 @@ body::after {
 }
 
 /* ==================================
-   2) BOOT (PS1/PS2-like BIOS log)
-   A nostalgic boot log that plays when the game is loaded.  You can
-   customise the lines of the log in game.js. */
+   2) BOOT SCREEN (PS1/PS2-style)
+   QA Polished boot animation with sigil and BIOS log */
 #boot-sequence-overlay{
-  background:#000;
-  color:#93f3ff;
-  justify-content:flex-start;
-  padding:48px 40px;
-  flex-direction:column;
-  gap:18px;
+  background: #000;
+  color: var(--accent);
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  flex-direction: column;
+  gap: 24px;
 }
+
+/* Boot logo elements */
+.boot-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  opacity: 0; /* Start hidden, animate in */
+}
+
+.boot-sigil {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 60% 40%, var(--accent), transparent 55%),
+              radial-gradient(circle at 40% 60%, var(--accent-2), transparent 55%),
+              radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), transparent 60%);
+  filter: drop-shadow(0 0 12px rgba(0,224,255,0.6));
+  opacity: 0;
+}
+
+.boot-text {
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  color: var(--ink);
+  opacity: 0;
+}
+
+.boot-sub {
+  color: var(--ink-dim);
+  font-size: 12px;
+  letter-spacing: 4px;
+  opacity: 0;
+}
+
+/* BIOS text container */
 .bios-text{
-  width:min(800px, 92vw);
-  height:min(360px, 50vh);
-  white-space:pre;
-  overflow:hidden;
-  border:2px solid #0ff;
-  padding:14px;
-  background:#03070c;
-  position:relative;
-  box-shadow:0 0 48px rgba(0,255,255,.2), inset 0 0 24px rgba(0,255,255,.08);
-  font-family:var(--font-arcade);
-  font-size:12px;
+  width: min(720px, 90vw);
+  max-height: min(300px, 40vh);
+  overflow: hidden;
+  padding: 20px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius: var(--radius);
+  box-shadow: 0 0 30px rgba(0,255,255,0.2);
+  font-family: var(--font-arcade);
+  font-size: 10px;
+  line-height: 1.6;
+  opacity: 0; /* Start hidden */
 }
-.bios-text::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background-image:repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0px, rgba(255,255,255,.0) 2px, rgba(0,0,0,.15) 4px);
-  mix-blend-mode:screen;
-  pointer-events:none;
+
+.bios-line {
+  opacity: 0;
+  margin-bottom: 6px;
+  color: var(--accent);
 }
-.bios-line{ opacity:0; margin-bottom:6px; }
-#boot-continue{ align-self:flex-start; background:#00ff00; color:#000; border-color:#00ff00; }
+
+/* Boot continue button */
+#boot-continue {
+  opacity: 0;
+  margin-top: 10px;
+}
 
 /* ==================================
    3) TITLE / STUDIO SPLASH
