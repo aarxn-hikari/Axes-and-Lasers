@@ -2248,6 +2248,7 @@ loop(now) {
   if (!this.paused) {
     this.update(cappedDt);
     this.draw();
+    this.drawHUD();
   }
 
   // Actualizar HUD
@@ -3056,23 +3057,6 @@ loop(now) {
       }
     }
 
-    // Indicador de estado de sala
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(20, h - 60, 200, 40);
-    ctx.font = 'bold 16px Arial';
-    if (this.roomState === 'Fight') {
-      ctx.fillStyle = '#ff2a6d';
-      ctx.fillText('⚔ COMBATE', 30, h - 35);
-    } else if (this.roomState === 'Clear') {
-      ctx.fillStyle = '#00ff88';
-      ctx.fillText('✓ COMPLETADO', 30, h - 35);
-      ctx.font = '12px Arial';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText('Presiona N para avanzar', 30, h - 15);
-    } else if (this.roomState === 'Transition') {
-      ctx.fillStyle = '#ffb300';
-      ctx.fillText('→ TRANSICIÓN...', 30, h - 35);
-    }
     // ✅ Dibuja la puerta de salida si la sala está despejada
     const roomForDoor = this.rooms ? this.rooms[this.currentRoomIndex] : null;
     if (this.roomState === 'Clear' && roomForDoor) {
@@ -3106,6 +3090,40 @@ loop(now) {
     }
     // Minimapa
     this.drawMinimap();
+  },
+
+  // ========================================================================
+  // RENDERIZADO DE HUD (Canvas Overlay)
+  // ========================================================================
+
+  drawHUD() {
+    const hudCanvas = UIManager.el('hud-canvas');
+    if (!hudCanvas) return;
+
+    const hudCtx = hudCanvas.getContext('2d');
+    const w = hudCanvas.width;
+    const h = hudCanvas.height;
+
+    // Limpiar HUD canvas
+    hudCtx.clearRect(0, 0, w, h);
+
+    // Indicador de estado de sala
+    hudCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    hudCtx.fillRect(20, h - 60, 200, 40);
+    hudCtx.font = 'bold 16px Arial';
+    if (this.roomState === 'Fight') {
+      hudCtx.fillStyle = '#ff2a6d';
+      hudCtx.fillText('⚔ COMBATE', 30, h - 35);
+    } else if (this.roomState === 'Clear') {
+      hudCtx.fillStyle = '#00ff88';
+      hudCtx.fillText('✓ COMPLETADO', 30, h - 35);
+      hudCtx.font = '12px Arial';
+      hudCtx.fillStyle = '#ffffff';
+      hudCtx.fillText('Presiona N para avanzar', 30, h - 15);
+    } else if (this.roomState === 'Transition') {
+      hudCtx.fillStyle = '#ffb300';
+      hudCtx.fillText('→ TRANSICIÓN...', 30, h - 35);
+    }
   },
 
   drawMinimap() {
