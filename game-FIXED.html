@@ -3,43 +3,30 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-    <!-- Added meta description and Open Graph tags for better SEO and sharing -->
 <meta name="description" content="AXES &amp; LASERS — Resaca Cósmica is a retro‑inspired roguelike shooter with neon aesthetics and intense gameplay."/>
 <meta property="og:title" content="AXES &amp; LASERS — Resaca Cósmica"/>
 <meta property="og:description" content="Enter a cosmic dungeon crawler inspired by classic arcade games.  Survive waves of enemies and upgrade your hero."/>
 <meta property="og:type" content="website"/>
-<!-- If you have a dedicated preview image, set it here -->
 <meta property="og:image" content=""/>
 <meta name="theme-color" content="#030307"/>
 <title>AXES &amp; LASERS — Resaca Cósmica</title>
 
 <!-- External dependencies -->
-<!-- NES.css brings a retro‑inspired look and feel.  We use the arcade font and icons to maintain aesthetic consistency. -->
 <link href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
-<!-- Anime.js for UI animations (bios typing, title effects, etc.) -->
+<!-- Anime.js for UI animations -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
 <!-- Root variables and base styles -->
 <style>
 /*
- * AXES &amp; LASERS — Resaca Cósmica
- *
- * This file defines the HTML skeleton and presentation for the game.  It
- * separates concerns by keeping all game logic in `game.js` while the
- * markup here contains only structure and styling.  The styling is
- * inspired by your unified shell: a dark neon‑lit theme with clear
- * typography and responsive layouts.  Feel free to tweak the CSS to
- * refine the look further; the variables defined on :root make it easy
- * to adjust colours globally.
+ * AXES & LASERS — Resaca Cósmica
+ * FIXED VERSION - QA Audit Complete
  */
 
 /* ================================
-   0) ROOT THEME
-   All colours and fonts live here so the palette can be tweaked in one
-   place.  We reuse the same variables from your prototype to deliver
-   visual continuity across the boot, menu and game screens. */
+   0) ROOT THEME */
 :root{
   --bg: #030307;
   --bg-panel: #101018;
@@ -59,46 +46,37 @@
   --scanline: linear-gradient(rgba(255,255,255,.04), rgba(0,0,0,0) 2px);
   --font-arcade: 'Press Start 2P', ui-monospace, Menlo, Consolas, "Courier New", monospace;
   --font-ui: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-
-  /* Additional palette from the animated UI shell.  These variables extend the
-     existing theme to allow glass panels, grid backgrounds and other subtle
-     retro console vibes without altering your core colour definitions. */
-  --bg-glass: rgba(10,12,20,0.7); /* translucent charcoal used for glass panels */
-  --radius: 18px;                 /* consistent corner radius */
-  --ink: #e6f2ff;                /* bright neutral text */
-  --ink-dim: #9bb3cc;            /* dimmed neutral text */
-  --accent-2: #7a5cff;           /* secondary accent (purple) */
-  --accent-3: #00ffa2;           /* tertiary accent (green) */
-  --grid: rgba(120,150,220,0.08);/* faint grid lines used for the background */
+  --bg-glass: rgba(10,12,20,0.7);
+  --radius: 18px;
+  --ink: #e6f2ff;
+  --ink-dim: #9bb3cc;
+  --accent-2: #7a5cff;
+  --accent-3: #00ffa2;
+  --grid: rgba(120,150,220,0.08);
   --shadow-strong: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 *{ box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-tap-highlight-color:transparent }
-html,body{ height:100%; }
+html,body{ height:100%; width:100%; overflow:hidden; }
 body{
-  /* Layer multiple gradients to achieve a richer backdrop inspired by
-     the animated shell.  The original dark radial was replaced by
-     overlapping radial gradients plus a linear gradient to give depth
-     and variation. */
   background:
     radial-gradient(1200px 800px at 70% 20%, rgba(0,255,200,0.08), transparent 50%),
     radial-gradient(900px 600px at 20% 80%, rgba(120,90,255,0.10), transparent 60%),
     linear-gradient(180deg, #070912, #03040a 55%, #020309);
   color: var(--ink);
   font-family: var(--font-ui);
-  overflow:hidden;
   font-size:14px;
   line-height:1.6;
+  position: relative;
 }
 
-/* Subtle CRT scanlines and vignette, layered atop the page without
-   interfering with the game canvas.  These pseudo elements are
-   pointer‑events:none so they do not block any input. */
+/* CRT scanlines and vignette */
 body::before, body::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: 9999;
 }
 body::before {
   background: linear-gradient(rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.03) 50%);
@@ -110,9 +88,7 @@ body::after {
   box-shadow: inset 0 0 250px rgba(0,0,0,0.75), inset 0 0 120px rgba(0,0,0,0.55);
 }
 
-/* Utility classes borrowed from the animated UI.  These are kept
-   generic so they can be applied to existing markup without breaking
-   the game logic. */
+/* Utility classes */
 .hidden { display: none !important; }
 .centered { display: grid; place-items: center; }
 .glass {
@@ -131,9 +107,6 @@ body::after {
 .title-font { font-family: var(--font-arcade); letter-spacing: 2px; }
 .accent { color: var(--accent); }
 
-/* Apply the glass effect to the main menu container and panels.  These
-   selectors enhance the existing UI with subtle translucency and
-   soften the edges. */
 #main-menu-overlay .main-menu-container,
 #pause-overlay .main-menu-container,
 #levelup-overlay .main-menu-container {
@@ -145,8 +118,7 @@ body::after {
 }
 
 /* =====================================================
-   QA: NEW PANEL SYSTEM (Floating titles)
-   ===================================================== */
+   PANEL SYSTEM (Floating titles) */
 .panel {
   background: var(--bg-glass);
   border: 1px solid rgba(255,255,255,0.08);
@@ -163,7 +135,7 @@ body::after {
   text-transform: uppercase;
   letter-spacing: 1px;
   position: absolute;
-  top: -10px; /* Pull up to float above panel */
+  top: -10px;
   left: 20px;
   background: var(--bg-panel);
   padding: 4px 12px;
@@ -173,7 +145,6 @@ body::after {
   text-shadow: 0 0 5px rgba(0,242,255,.4);
 }
 
-/* Panels inside the game UI */
 #sidebar .panel,
 #game-ui-overlay .panel {
   background: var(--bg-glass);
@@ -183,17 +154,12 @@ body::after {
   backdrop-filter: blur(12px) saturate(1.1);
 }
 
-/* Update log entries to use the neutral ink colours. */
 #event-log .log-entry {
   color: var(--ink);
 }
 
 /* ================================
-   1) CORE OVERLAY SYSTEM
-   The UI is composed of several overlays: boot screen, title screen,
-   main menu, in‑game HUD, pause menu and level up menu.  Only one
-   overlay is visible at a time.  The overlays are controlled via
-   JavaScript (see game.js). */
+   1) CORE OVERLAY SYSTEM */
 #app{
   position:fixed;
   inset:0;
@@ -201,10 +167,10 @@ body::after {
   z-index:1000;
 }
 .screen-overlay{
-  position:absolute; 
-  inset:0; 
+  position:absolute;
+  inset:0;
   display:none;
-  align-items:center; 
+  align-items:center;
   justify-content:center;
   pointer-events:all;
   background:rgba(0,0,0,.95);
@@ -212,16 +178,15 @@ body::after {
   background-image: linear-gradient(rgba(0,0,0,.5) 1px, transparent 1px);
   background-size:100% 4px;
   animation:noise .5s infinite step-end;
-  z-index:100; /* ✅ Ensure overlays stack properly */
+  z-index:100;
 }
-.screen-overlay.active{ 
-  display:flex; 
+.screen-overlay.active{
+  display:flex;
 }
 @keyframes noise{0%,100%{background-position:0 0;}50%{background-position:0 2px;}}
 
 /* =====================================================
-   NEW BUTTON SYSTEM (QA Polished)
-   ===================================================== */
+   BUTTON SYSTEM (QA Polished) */
 .btn {
   font-family: var(--font-arcade);
   font-size: 14px;
@@ -290,7 +255,6 @@ body::after {
   box-shadow: 0 0 24px rgba(255,42,109,0.6);
 }
 
-/* Focus ring for keyboard/gamepad */
 .focusable:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -305,8 +269,7 @@ body::after {
 }
 
 /* =====================================================
-   QA: NEW FORM CONTROLS (Replaces old sliders/toggles)
-   ===================================================== */
+   FORM CONTROLS */
 .switch {
   position: relative;
   display: inline-block;
@@ -382,15 +345,13 @@ body::after {
   background: var(--accent);
 }
 
-/* Pause overlay glass backdrop reminiscent of the animated UI. */
 #pause-overlay.screen-overlay {
   background: rgba(0,0,0,0.55);
   backdrop-filter: blur(6px);
 }
 
 /* ==================================
-   2) BOOT SCREEN (PS1/PS2-style)
-   QA Polished boot animation with sigil and BIOS log */
+   2) BOOT SCREEN (PS1/PS2-style) */
 #boot-sequence-overlay{
   background: #000;
   color: var(--accent);
@@ -401,13 +362,12 @@ body::after {
   gap: 24px;
 }
 
-/* Boot logo elements */
 .boot-logo {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  opacity: 0; /* Start hidden, animate in */
+  opacity: 0;
 }
 
 .boot-sigil {
@@ -436,7 +396,6 @@ body::after {
   opacity: 0;
 }
 
-/* BIOS text container */
 .bios-text{
   width: min(720px, 90vw);
   max-height: min(300px, 40vh);
@@ -450,7 +409,7 @@ body::after {
   font-family: var(--font-arcade);
   font-size: 10px;
   line-height: 1.6;
-  opacity: 0; /* Start hidden */
+  opacity: 0;
 }
 
 .bios-line {
@@ -459,15 +418,13 @@ body::after {
   color: var(--accent);
 }
 
-/* Boot continue button */
 #boot-continue {
   opacity: 0;
   margin-top: 10px;
 }
 
 /* ==================================
-   3) TITLE / STUDIO SPLASH
-   A simple splash screen to display studio branding and tagline. */
+   3) TITLE / STUDIO SPLASH */
 #title-screen-overlay{ background:var(--bg); flex-direction:column; gap:24px; }
 .title-card-container{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px; }
 .studio-logo{
@@ -483,10 +440,7 @@ body::after {
 .studio-sfx{ font-family:var(--font-arcade); color:#fff; margin:22px 0; opacity:0; }
 
 /* ==================================
-   4) MAIN MENU (tabs + panels)
-   Presents entry points for starting a new game, adjusting settings or
-   reading the guide.  The content of each panel is minimal; the real
-   functionality is wired up in game.js. */
+   4) MAIN MENU */
 #main-menu-overlay{ background: radial-gradient(1100px 600px at 70% 10%, rgba(0,242,255,.08), transparent 60%), rgba(0,0,0,.92); }
 .main-menu-container{
   width:min(1000px, 90vw);
@@ -553,11 +507,9 @@ body::after {
 }
 
 /* ==================================
-   5) IN-GAME HUD
-   The heads‑up display shows the player's stats, inventory and event log
-   during gameplay.  The content is updated by the game engine. */
+   5) IN-GAME HUD - CRITICAL FIX */
 #game-ui-overlay{
-  position:fixed !important; /* ✅ FIXED: Use fixed positioning */
+  position:fixed !important;
   top:0 !important;
   left:0 !important;
   width:100vw !important;
@@ -565,22 +517,19 @@ body::after {
   display:none;
   pointer-events:none;
   z-index:50;
-  /* ✅ CRITICAL FIX: Override centering inherited from .screen-overlay */
   align-items:flex-start !important;
   justify-content:flex-start !important;
 }
 #game-ui-overlay.screen-overlay{
-  /* Override inherited overlay styling so the game world is visible. */
   background: none !important;
   backdrop-filter: none !important;
   animation: none !important;
-  pointer-events: none !important; /* ✅ Let clicks pass through to canvas */
+  pointer-events: none !important;
 }
 #game-ui-overlay.active {
   display: block !important;
 }
 #game-container{
-  /* ✅ FIXED: Removed grid padding, use absolute positioning for HUD */
   position:absolute;
   top:0;
   left:0;
@@ -598,7 +547,7 @@ body::after {
   pointer-events:all;
 }
 
-/* Canvas container and layers - CRITICAL FIX */
+/* CRITICAL FIX: Canvas container positioning */
 #canvas-container {
   position: fixed !important;
   top: 0 !important;
@@ -615,14 +564,14 @@ body::after {
   image-rendering: crisp-edges;
 }
 
+/* CRITICAL FIX: Game canvas absolute positioning with explicit dimensions */
 #game-canvas {
-  /* ✅ CRITICAL FIX: Absolute positioning inside fixed container */
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  z-index:1;
+  z-index: 1;
   background:#1a1a1a;
   box-shadow:0 0 30px rgba(0,0,0,.5);
   display:block;
@@ -631,7 +580,6 @@ body::after {
 }
 
 #hud-canvas {
-  /* ✅ CRITICAL FIX: HUD overlay matches game canvas positioning */
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
@@ -641,7 +589,7 @@ body::after {
   pointer-events: none;
 }
 
-/* Minimap and auto‑aim indicator (QA Updated) */
+/* Minimap */
 #minimap-container{
   position:absolute;
   bottom:14px;
@@ -654,18 +602,18 @@ body::after {
 
 #minimap-container canvas{
   width:100%;
-  height:calc(100% - 0px); /* Account for padding */
+  height:calc(100% - 0px);
   border-radius: 12px;
   background:#0a0c12;
   border: 1px solid rgba(0, 242, 255, 0.3);
   margin-top: 8px;
 }
 
-/* Auto‑aim indicator */
+/* Auto-aim indicator */
 #auto-aim-indicator{
   position:absolute;
   top:14px;
-  right:320px + 28px; /* Next to sidebar */
+  right:348px;
   width: 140px;
   text-align: center;
   z-index:10;
@@ -713,7 +661,7 @@ body::after {
   font-weight: 500;
 }
 
-/* Sidebar panels - ✅ FIXED: Absolute positioning for right side HUD */
+/* Sidebar panels */
 #sidebar{
   position:fixed;
   top:14px;
@@ -729,7 +677,6 @@ body::after {
   z-index:60;
 }
 .panel{
-  /* Liquid Glass panels */
   background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.20);
   border-radius:14px;
@@ -740,7 +687,6 @@ body::after {
   backdrop-filter: blur(10px) saturate(1.2);
 }
 
-/* ✅ Stats sólo visibles en el menú de pausa */
 #sidebar .panel.stats { display: none; }
 body.show-stats #sidebar .panel.stats { display: block; }
 .panel-title{
@@ -753,7 +699,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
   text-shadow:0 0 5px rgba(0,242,255,.4);
 }
 
-/* Bars (QA Updated) */
+/* Bars */
 .stat-bar{
   margin-bottom:12px;
 }
@@ -810,7 +756,6 @@ body.show-stats #sidebar .panel.stats { display: block; }
 /* Inventory */
 #inventory-grid{
   display:grid;
-  /* ✅ Más compacto: 5 columnas en lugar de 10 */
   grid-template-columns:repeat(5,1fr);
   gap:6px;
   max-height:250px;
@@ -847,9 +792,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
 
 
 /* ==================================
-   6) PAUSE & LEVEL UP
-   Menus shown when the game is paused or the player levels up.  The
-   perk cards will be filled by game.js. */
+   6) PAUSE & LEVEL UP */
 #pause-overlay .menu-header{ font-size:32px; text-shadow:0 0 20px var(--glow); margin-bottom:26px; }
 .perk-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:12px; }
 .perk-card{
@@ -868,8 +811,7 @@ body.show-stats #sidebar .panel.stats { display: block; }
 .perk-card.legendary{ border-color:var(--legendary); background:rgba(255,106,0,.1); animation:pulse 2s infinite; }
 
 /* ==================================
-   7) RESPONSIVE
-   Adjust layout for smaller screens. */
+   7) RESPONSIVE */
 @media (max-width:1400px){
   #sidebar{ width:280px; }
 }
@@ -885,13 +827,8 @@ body.show-stats #sidebar .panel.stats { display: block; }
 @media (max-width:768px){ .perk-cards{ grid-template-columns:1fr; } .studio-logo{ font-size:34px; } .menu-header{ font-size:22px; } }
 :focus-visible{ outline:3px solid var(--gold); outline-offset:2px; border-radius:6px; }
 </style>
-<!--
-  Z-Index hierarchy documentation and HUD positioning
-  This section explicitly defines how the various UI layers stack relative to the
-  gameplay canvas.  It also ensures that HUD elements receive input events
-  even when overlays are transparent.  Documenting the z‑index values helps
-  maintain a stable visual hierarchy as the project evolves.
--->
+
+<!-- Z-INDEX HIERARCHY documentation -->
 <style>
 /* =====================================
    Z-INDEX HIERARCHY (documented)
@@ -925,9 +862,8 @@ body.show-stats #sidebar .panel.stats { display: block; }
 <body class="grid-bg">
 
 <!-- Canvas Layer Structure: Game (background) + HUD (overlay) -->
-<!-- CRITICAL FIX: Removed conflicting inline styles, relying on CSS -->
+<!-- CRITICAL FIX: Removed inline styles, relying on CSS for positioning -->
 <div id="canvas-container">
-  <!-- Background canvas: Game world rendering -->
   <canvas id="game-canvas"
           role="application"
           aria-label="Axes &amp; Lasers gameplay canvas"
@@ -936,30 +872,22 @@ body.show-stats #sidebar .panel.stats { display: block; }
     <p>Please upgrade to a modern browser.</p>
   </canvas>
 
-  <!-- HUD overlay canvas: UI elements, minimap, stats -->
   <canvas id="hud-canvas"
           aria-label="HUD overlay">
   </canvas>
 </div>
 
-<!-- App container: All screens are children of this wrapper.  Only
-     the active overlay will be displayed at any given time. -->
+<!-- App container -->
 <div id="app">
 
   <!-- Boot (BIOS) screen -->
   <div id="boot-sequence-overlay" class="screen-overlay screen-boot active">
-    <!-- New boot logo inspired by the animated shell.  The original bios
-         log and start button are still present but hidden so that
-         existing game.js logic continues to function. -->
     <div class="boot-logo">
       <div class="boot-sigil" id="bootSigil"></div>
       <div class="boot-text title-font">HIKARI CREATIVE STUDIOS</div>
       <div class="boot-sub">legacy systems initializing…</div>
     </div>
     <div class="bios-text" id="bios-text"></div>
-    <!-- Keep the start button visible so that the existing game logic
-         can progress once the player is ready.  It sits below the
-         logo by default. -->
     <button class="btn focusable" id="boot-continue" tabindex="0">Press Start</button>
   </div>
 
@@ -1087,7 +1015,6 @@ body.show-stats #sidebar .panel.stats { display: block; }
           <h3 class="panel-title">Auto-Aim</h3>
           <span id="auto-aim-status">ON</span>
         </div>
-        <!-- Room and enemy counters for the current arena.  Updated by game.js. -->
         <div id="room-display" class="panel">
           <h3 class="panel-title">Room Info</h3>
           <div class="room-number"><span id="current-room">Sala 1/1</span></div>
@@ -1165,42 +1092,37 @@ body.show-stats #sidebar .panel.stats { display: block; }
 
 </div> <!-- /app -->
 
-<!-- Game engine: The core logic and UI management is implemented in
-     this module.  It uses modern JavaScript (ES6 modules) and must
-     therefore be loaded as a module. -->
+<!-- Game engine -->
 <script src="game.js"></script>
-  <!-- Animate the main menu items when the title screen continues.
-       This script hooks into the "Continuar" button and uses anime.js
-       (already loaded in the head) to stagger the menu items into view.  It
-       does not modify any existing modules and runs in the global scope. -->
-  <script>
-    window.addEventListener('load', function(){
-      const titleBtn = document.getElementById('title-continue');
-      if (!titleBtn) return;
-      titleBtn.addEventListener('click', function(){
-        const buttons = document.querySelectorAll('#main-menu-overlay .menu-nav button');
-        if (!buttons.length) return;
-        anime.set(buttons, { translateX: -14, opacity: 0 });
-        anime({
-          targets: buttons,
-          translateX: [ -14, 0 ],
-          opacity: [0, 1],
-          delay: anime.stagger(110),
-          duration: 520,
-          easing: 'easeOutQuad'
-        });
+
+<!-- Animate main menu items -->
+<script>
+  window.addEventListener('load', function(){
+    const titleBtn = document.getElementById('title-continue');
+    if (!titleBtn) return;
+    titleBtn.addEventListener('click', function(){
+      const buttons = document.querySelectorAll('#main-menu-overlay .menu-nav button');
+      if (!buttons.length) return;
+      anime.set(buttons, { translateX: -14, opacity: 0 });
+      anime({
+        targets: buttons,
+        translateX: [ -14, 0 ],
+        opacity: [0, 1],
+        delay: anime.stagger(110),
+        duration: 520,
+        easing: 'easeOutQuad'
       });
     });
-  </script>
-  <!-- Call UIManager.cleanup() before the page is unloaded, if it exists.
-       This prevents potential memory leaks by removing event listeners. -->
-  <script>
-    window.addEventListener('beforeunload', function(){
-      if (window.UIManager && typeof window.UIManager.cleanup === 'function') {
-        window.UIManager.cleanup();
-      }
-    });
-  </script>
+  });
+</script>
+
+<!-- Cleanup on page unload -->
+<script>
+  window.addEventListener('beforeunload', function(){
+    if (window.UIManager && typeof window.UIManager.cleanup === 'function') {
+      UIManager.cleanup();
+    }
+  });
+</script>
 </body>
 </html>
-

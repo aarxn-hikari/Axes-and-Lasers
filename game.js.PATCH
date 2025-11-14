@@ -1,0 +1,181 @@
+/*
+ * CRITICAL FIX FOR game.js
+ *
+ * ERROR: GamepadManager.getState is not a function (line 822)
+ *
+ * SOLUTION: Add getState() method to GamepadManager object
+ *
+ * LOCATION: After line 307 (after applyDeadzone method)
+ *
+ * ADD THIS METHOD TO GamepadManager:
+ */
+
+// INSERT THIS METHOD IN GamepadManager OBJECT (around line 308):
+
+  getState() {
+    const gp = navigator.getGamepads && navigator.getGamepads()[0];
+    if (!gp) return null;
+
+    // Map standard gamepad to state object
+    return {
+      // D-pad (buttons 12-15)
+      dpadUp: gp.buttons[12]?.pressed || false,
+      dpadDown: gp.buttons[13]?.pressed || false,
+      dpadLeft: gp.buttons[14]?.pressed || false,
+      dpadRight: gp.buttons[15]?.pressed || false,
+
+      // Face buttons
+      a: gp.buttons[0]?.pressed || false,  // A button
+      b: gp.buttons[1]?.pressed || false,  // B button
+      x: gp.buttons[2]?.pressed || false,  // X button
+      y: gp.buttons[3]?.pressed || false,  // Y button
+
+      // Left stick (axes 0-1)
+      leftStickX: this.applyDeadzone(gp.axes[0] || 0),
+      leftStickY: this.applyDeadzone(gp.axes[1] || 0),
+
+      // Right stick (axes 2-3)
+      rightStickX: this.applyDeadzone(gp.axes[2] || 0),
+      rightStickY: this.applyDeadzone(gp.axes[3] || 0),
+
+      // Raw gamepad object for additional access if needed
+      raw: gp
+    };
+  },
+
+/*
+ * COMPLETE CORRECTED GamepadManager OBJECT:
+ * Replace the entire GamepadManager object (lines 219-308) with this:
+ */
+
+const GamepadManager = {
+  active: false,
+  last: [],
+  cursor: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+  deadzone: 0.18,
+  aimSpeed: 1200,
+
+  init() {
+    window.addEventListener('gamepadconnected', () => {
+      this.active = true;
+      UIManager.log('Gamepad conectado', 'info');
+    });
+    window.addEventListener('gamepaddisconnected', () => {
+      this.active = false;
+      UIManager.log('Gamepad desconectado', 'warn');
+    });
+  },
+
+  poll(dt) {
+    const gp = navigator.getGamepads && navigator.getGamepads()[0];
+    if (!gp) return;
+
+    // Sticks (con deadzone)
+    const lx = this.applyDeadzone(gp.axes[0]);
+    const ly = this.applyDeadzone(gp.axes[1]);
+    const rx = this.applyDeadzone(gp.axes[2]);
+    const ry = this.applyDeadzone(gp.axes[3]);
+
+    // Movimiento del jugador (L-Stick)
+    if (Game.running && Game.player) {
+      Game.input.moveX = lx;
+      Game.input.moveY = ly;
+    }
+
+    // Cursor virtual (R-Stick)
+    const speed = this.aimSpeed * dt;
+    this.cursor.x = clamp(this.cursor.x + rx * speed, 0, window.innerWidth);
+    this.cursor.y = clamp(this.cursor.y + ry * speed, 0, window.innerHeight);
+    Game.input.cursorX = this.cursor.x;
+    Game.input.cursorY = this.cursor.y;
+
+    // Botones
+    // 0=A(dash), 1=B(heavy), 2=X(TBD), 3=Y, 4=LB, 5=RB, 6=LT, 7=RT(shoot), 8=Back, 9=Start(pause)
+    Game.input.shoot = this.buttonPressed(gp, 7);
+    Game.input.heavyAttack = this.buttonEdge(gp, 1); // B button for heavy attack
+
+    if (this.buttonEdge(gp, 0)) Game.input.dash = true; // A
+    if (this.buttonEdge(gp, 9)) this.togglePause(); // Start
+
+    // Navegación UI
+    if (UIManager.activeScreen !== 'game-ui') {
+      this.navigateUI(gp);
+    }
+
+    this.last = gp.buttons.map(b => b.pressed);
+  },
+
+  navigateUI(gp) {
+    if (this.buttonEdge(gp, 12)) UIManager.moveFocus('up');
+    if (this.buttonEdge(gp, 13)) UIManager.moveFocus('down');
+    if (this.buttonEdge(gp, 14)) UIManager.moveFocus('left');
+    if (this.buttonEdge(gp, 15)) UIManager.moveFocus('right');
+    if (this.buttonEdge(gp, 0)) UIManager.confirmFocused();
+    if (this.buttonEdge(gp, 1)) UIManager.back();
+  },
+
+  togglePause() {
+    if (UIManager.activeScreen === 'game-ui') {
+      Game.paused = true;
+      UIManager.go('game-ui', 'pause');
+    } else if (UIManager.activeScreen === 'pause') {
+      Game.paused = false;
+      UIManager.go('pause', 'game-ui');
+    }
+  },
+
+  buttonPressed(gp, idx) {
+    return gp.buttons[idx]?.pressed || false;
+  },
+
+  buttonEdge(gp, idx) {
+    const current = gp.buttons[idx]?.pressed || false;
+    const previous = this.last[idx] || false;
+    return current && !previous;
+  },
+
+  applyDeadzone(value) {
+    return Math.abs(value) < this.deadzone ? 0 : value;
+  },
+
+  // ✅ CRITICAL FIX: Add getState() method
+  getState() {
+    const gp = navigator.getGamepads && navigator.getGamepads()[0];
+    if (!gp) return null;
+
+    // Map standard gamepad to state object
+    return {
+      // D-pad (buttons 12-15)
+      dpadUp: gp.buttons[12]?.pressed || false,
+      dpadDown: gp.buttons[13]?.pressed || false,
+      dpadLeft: gp.buttons[14]?.pressed || false,
+      dpadRight: gp.buttons[15]?.pressed || false,
+
+      // Face buttons
+      a: gp.buttons[0]?.pressed || false,  // A button
+      b: gp.buttons[1]?.pressed || false,  // B button
+      x: gp.buttons[2]?.pressed || false,  // X button
+      y: gp.buttons[3]?.pressed || false,  // Y button
+
+      // Left stick (axes 0-1)
+      leftStickX: this.applyDeadzone(gp.axes[0] || 0),
+      leftStickY: this.applyDeadzone(gp.axes[1] || 0),
+
+      // Right stick (axes 2-3)
+      rightStickX: this.applyDeadzone(gp.axes[2] || 0),
+      rightStickY: this.applyDeadzone(gp.axes[3] || 0),
+
+      // Raw gamepad object for additional access if needed
+      raw: gp
+    };
+  }
+};
+
+/*
+ * VERIFICATION:
+ * After applying this fix, the error "GamepadManager.getState is not a function"
+ * should be resolved and the game should load properly.
+ *
+ * The getState() method returns a normalized gamepad state object that can be
+ * used by the UI navigation system in checkGamepadNavigation() (line 822).
+ */

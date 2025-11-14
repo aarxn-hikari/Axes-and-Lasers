@@ -304,6 +304,38 @@ const GamepadManager = {
 
   applyDeadzone(value) {
     return Math.abs(value) < this.deadzone ? 0 : value;
+  },
+
+  // ✅ CRITICAL FIX: Add getState() method for UI navigation
+  getState() {
+    const gp = navigator.getGamepads && navigator.getGamepads()[0];
+    if (!gp) return null;
+
+    // Map standard gamepad to state object
+    return {
+      // D-pad (buttons 12-15)
+      dpadUp: gp.buttons[12]?.pressed || false,
+      dpadDown: gp.buttons[13]?.pressed || false,
+      dpadLeft: gp.buttons[14]?.pressed || false,
+      dpadRight: gp.buttons[15]?.pressed || false,
+
+      // Face buttons
+      a: gp.buttons[0]?.pressed || false,  // A button
+      b: gp.buttons[1]?.pressed || false,  // B button
+      x: gp.buttons[2]?.pressed || false,  // X button
+      y: gp.buttons[3]?.pressed || false,  // Y button
+
+      // Left stick (axes 0-1)
+      leftStickX: this.applyDeadzone(gp.axes[0] || 0),
+      leftStickY: this.applyDeadzone(gp.axes[1] || 0),
+
+      // Right stick (axes 2-3)
+      rightStickX: this.applyDeadzone(gp.axes[2] || 0),
+      rightStickY: this.applyDeadzone(gp.axes[3] || 0),
+
+      // Raw gamepad object for additional access if needed
+      raw: gp
+    };
   }
 };
 
