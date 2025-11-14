@@ -1104,6 +1104,7 @@ this.el('random-seed-btn').addEventListener('click', async () => {
 
   bootLog() {
     // PS1/PS2-style boot animation with anime.js timeline
+    const bootLogo = document.querySelector('.boot-logo');
     const sigil = this.el('bootSigil');
     const bootText = document.querySelector('.boot-text');
     const bootSub = document.querySelector('.boot-sub');
@@ -1126,15 +1127,21 @@ this.el('random-seed-btn').addEventListener('click', async () => {
       easing: 'easeOutExpo'
     });
 
-    // 1. Animate sigil (scale + rotate + glow)
+    // 0. Show boot logo container
     tl.add({
+      targets: bootLogo,
+      opacity: [0, 1],
+      duration: 400
+    })
+    // 1. Animate sigil (scale + rotate + glow)
+    .add({
       targets: sigil,
       scale: [0.8, 1],
       rotate: [0, 360],
       opacity: [0, 1],
       duration: 1200,
       easing: 'easeOutElastic(1, .8)'
-    })
+    }, '-=200')
     // 2. Studio name
     .add({
       targets: bootText,
@@ -1148,9 +1155,16 @@ this.el('random-seed-btn').addEventListener('click', async () => {
       opacity: [0, 1],
       translateY: [-10, 0],
       duration: 600
-    }, '-=400');
+    }, '-=400')
+    // 4. Show BIOS box
+    .add({
+      targets: biosBox,
+      opacity: [0, 1],
+      scale: [0.95, 1],
+      duration: 600
+    }, '+=200');
 
-    // 4. BIOS text lines with stagger
+    // 5. BIOS text lines with stagger
     lines.forEach((text, i) => {
       const div = document.createElement('div');
       div.className = 'bios-line';
@@ -1162,11 +1176,11 @@ this.el('random-seed-btn').addEventListener('click', async () => {
         opacity: [0, 1],
         translateX: [-20, 0],
         duration: 500,
-        delay: i * 200
-      }, i === 0 ? '+=400' : '-=300');
+        delay: i * 100
+      }, i === 0 ? '+=200' : '-=400');
     });
 
-    // 5. Show continue button with pulse
+    // 6. Show continue button with pulse
     tl.add({
       targets: continueBtn,
       opacity: [0, 1],
@@ -1182,7 +1196,7 @@ this.el('random-seed-btn').addEventListener('click', async () => {
           easing: 'easeInOutQuad'
         });
       }
-    }, '+=200');
+    }, '+=400');
   },
 
   animateTitle() {
